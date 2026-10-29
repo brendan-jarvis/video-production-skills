@@ -910,6 +910,48 @@ class EditingTests(MediaFixtures):
     def test_insert_bad_zoom_amount_refused(self):
         script("insert.py", self.logo, "--duration", "2", "--zoom", "in", "--zoom-amount", "1.0", expect_fail=True)
 
+    def _ken_burns_still(self):
+        kb_src = OUT / "kb_src.png"
+        if not kb_src.exists():
+            sh("ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=c=white:s=800x800",
+               "-vf", "drawbox=x=300:y=300:w=200:h=200:color=red:t=fill", "-frames:v", "1", kb_src)
+        return kb_src
+
+    def _edge_pixel(self, path, t):
+        r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(path), "-ss", str(t),
+                            "-vf", "crop=2:2:410:410", "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return r.stdout[:3]
+
+    def test_insert_smooth_zoom_is_the_default_and_skips_zoompan(self):
+        """smooth scales per frame. The planned command must not be the integer-pixel filter."""
+        proc = script("insert.py", self.logo, "--duration", "2", "--zoom", "in", "--width", "320", "--height", "320",
+                      "--dry-run", "--json", "-o", OUT / "kb_smooth_plan.mp4")
+        cmd = " ".join(json.loads(proc.stdout)["commands"])
+        self.assertIn("eval=frame", cmd)
+        self.assertIn("overlay=", cmd)
+        self.assertNotIn("zoompan=", cmd)
+
+    def test_insert_zoompan_method_keeps_the_integer_filter_and_still_zooms(self):
+        proc = script("insert.py", self.logo, "--duration", "2", "--zoom", "in", "--zoom-method", "zoompan",
+                      "--dry-run", "--json", "-o", OUT / "kb_zoompan_plan.mp4")
+        cmd = " ".join(json.loads(proc.stdout)["commands"])
+        self.assertIn("zoompan=", cmd)
+        self.assertNotIn("eval=frame", cmd)
+        out = OUT / "kb_zoompan.mp4"
+        script("insert.py", self._ken_burns_still(), "--duration", "3", "--zoom", "in", "--zoom-amount", "1.3",
+               "--zoom-method", "zoompan", "--width", "640", "--height", "640", "--fps", "10", "-o", out)
+        start_r, start_g, start_b = self._edge_pixel(out, 0.1)
+        self.assertGreater(start_r, 240)
+        self.assertGreater(start_g, 240)
+        self.assertGreater(start_b, 240)
+        end_r, end_g, end_b = self._edge_pixel(out, 2.9)
+        self.assertGreater(end_r, 200)
+        self.assertLess(end_b, 60)
+
+    def test_insert_unknown_zoom_method_is_refused(self):
+        script("insert.py", self.logo, "--duration", "2", "--zoom", "in", "--zoom-method", "nope", expect_fail=True)
+
     # ---------------------------------------------------------------- reverse
     def test_reverse_swaps_start_and_end(self):
         halfcolor = OUT / "halfcolor.mp4"

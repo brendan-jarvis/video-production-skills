@@ -88,7 +88,6 @@ These skills pull together techniques and guides from a lot of creators. Inspira
 - [kajisho5 / ffmpeg-skill](https://github.com/kajisho5/ffmpeg-skill) — the source of the FFmpeg tool scripts, platform templates and reference notes, used under MIT. The copyright and permission notice, and the file list, are in [NOTICE](NOTICE).
 - [Ashe (@ashebytes)](https://x.com/ashebytes/status/2115215620279263329) — video-editing workflow tips.
 - The Director video bot template — the pitch-concepts, style line, key frames, takes and versioned-cut process.
-- [Filip Skrzesinski (@uptightchill)](https://x.com/uptightchill/status/2115497754021786060) — search [Subframe Motion](https://www.subframe.com/motion) for inspiration, then pull a working example before building an animation.
 
 and many other creators whose posts and guides shaped this workflow.
 

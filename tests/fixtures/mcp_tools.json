@@ -588,7 +588,8 @@
    "timeout",
    "width",
    "zoom",
-   "zoom_amount"
+   "zoom_amount",
+   "zoom_method"
   ],
   "required": []
  },

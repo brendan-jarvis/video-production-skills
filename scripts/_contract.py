@@ -153,7 +153,7 @@ TOOL_META: Dict[str, Dict[str, Any]] = {
                  required=FF + [X264, AAC], optional=[{"capability": "filter:reverse", "when": "--boomerang"}, {"capability": "filter:loop", "when": "--boomerang"}],
                  video_required=True, audio_only=False, visual=True, verify=["probe", "look"], produces_artifact=True, idempotency="content_equivalent", deterministic=True),
     "insert": dict(role="execution", inputs=["still image"], outputs=["silent video artifact of the requested duration / frame size / fps"],
-                   required=FF + [X264], optional=[{"capability": "filter:zoompan", "when": "--zoom / --pan"}],
+                   required=FF + [X264], optional=[{"capability": "filter:zoompan", "when": "--zoom-method zoompan"}],
                    video_required=True, audio_only=False, visual=True, verify=["probe", "look"], produces_artifact=True, idempotency="content_equivalent", deterministic=True),
     "background": dict(role="execution", inputs=[], outputs=["generated solid-colour or gradient video artifact"],
                         required=FF + [X264], optional=[{"capability": "filter:gradients", "when": "--gradient"}],
