@@ -54,19 +54,10 @@ Follow the `music-and-beats` skill. Use only music the user has rights to. Mute 
 Follow the `ffmpeg-tools` skill. Build `edit.json` (source, in/out, duration, motion, transition, beat index), then assemble with the repository scripts. Make edits by changing `edit.json` and re-rendering, not by hand-editing a command.
 
 - Use straight cuts unless the style calls for transitions.
-- Never hand-write ffmpeg's `zoompan` filter. It samples on integer pixels and the picture jitters. For a still, move a float-precision crop (the `perspective` filter is one way) and set fps explicitly on the input and the output (30). `scripts/insert.py --zoom` uses `zoompan`; if you use it, check the contact sheet for jitter before keeping the shot.
+- For a still with a zoom or pan, use `scripts/insert.py --zoom`. The default `--zoom-method smooth` keeps the move off whole-pixel steps. `--zoom-method zoompan` is faster and can jitter; check the contact sheet before keeping it. Do not hand-write a `zoompan` filter. Set fps explicitly on the input and the output (30).
 - Live Photos: avoid frame-blending slow motion, which melts the picture. Play at native speed or slow down by repeating frames. Deshake only shaky clips (`scripts/stabilize.py`).
 - Keep captions and titles inside the platform safe area (`references/gotchas.md#platform-safe-zones`).
 - Encode the final file as HEVC when the destination allows it. If `hevc_nvenc` is available, constant quality around 19 is a reasonable choice. Otherwise use `scripts/export.py --preset h265` (CPU libx265) or the scripts' default H.264. CPU is the fallback whenever the GPU encoder is missing or fails.
-
-## Motion graphics (optional)
-
-Skip this unless the piece needs a designed animation: a title card, a lower third, animated captions, or a transition. Straight cuts, `scripts/caption.py`, `scripts/graphics.py`, and `scripts/overlay.py --text` cover the usual titles. The core edit does not need this step.
-
-1. Search [Subframe Motion](https://www.subframe.com/motion) for inspiration first. It is a free library of open-source React animations, Motion components and WebGL shaders.
-2. Pull a working example from that library and adapt it. Do not copy the library into this repository. Record the example you used.
-3. Render the animation to video. A headless browser capture or Remotion both work. A transparent background, or a solid colour you can key out, composites cleanly.
-4. Lay it on the cut with `scripts/overlay.py` (`--video` for a clip, `--image` for a still). See the `ffmpeg-tools` skill.
 
 ## 5. Review gates
 

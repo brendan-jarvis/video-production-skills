@@ -1277,7 +1277,7 @@ class CutJoinTests(unittest.TestCase):
         self.assertEqual(int(streams[0]["duration_ts"]), 44100 + 66150)
 
     def test_a_segment_shorter_than_a_frame_is_refused(self):
-        out = DIR / "subframe.mp4"
+        out = DIR / "short_span.mp4"
         proc = script("cut.py", self.hevc, "--segments", "1-1.01,3-4", "-o", out, expect_fail=True)
         self.assertIn("shorter than one frame", proc.stderr)
         self.assertFalse(out.exists())
@@ -1313,7 +1313,7 @@ class CutJoinTests(unittest.TestCase):
     def test_a_single_cut_shorter_than_a_frame_is_refused_but_not_to_audio(self):
         """2.5.1 wrote one whole frame for --start 1 --end 1.01 and reported success. The refusal
         is a kind: input before ffmpeg runs; sound has no frame, so an audio output still cuts."""
-        out = DIR / "subframe_single.mp4"
+        out = DIR / "short_span_single.mp4"
         if out.exists():
             out.unlink()
         proc = script("cut.py", self.hevc, "--start", "1", "--end", "1.01", "-o", out, "--json", expect_fail=True)
@@ -1322,7 +1322,7 @@ class CutJoinTests(unittest.TestCase):
         self.assertEqual(doc["error"]["kind"], "input")
         self.assertEqual(doc["commands"], [])
         self.assertFalse(out.exists())
-        data = cut_json(self.hevc, "--start", "1", "--end", "1.01", "-o", DIR / "subframe_single.wav")
+        data = cut_json(self.hevc, "--start", "1", "--end", "1.01", "-o", DIR / "short_span_single.wav")
         self.assertEqual(data["status"], "completed")
         self.assertAlmostEqual(data["expected_duration"], 0.01, places=3)
 

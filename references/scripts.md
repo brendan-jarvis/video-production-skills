@@ -365,7 +365,9 @@ degrees once you can see how far off it is (a `look.py` judgement call).
 ### insert.py — still image to a timed silent clip
 ```
 insert.py IMAGE --duration T [--width W] [--height H] [--fps N]
-                 [--zoom in|out [--zoom-amount 1.3]] [--pan left|right|up|down] [-o OUT]
+                 [--zoom in|out [--zoom-amount 1.3]
+                  [--zoom-method smooth|zoompan]]
+                 [--pan left|right|up|down] [-o OUT]
 ```
 Produces a silent, exact-duration clip from one image. `--width`/`--height`
 resolve like `fit.py`'s (one given -> the other follows the image's aspect;
@@ -374,6 +376,13 @@ distorted). `--zoom in|out` is a Ken Burns effect: a slow linear zoom across
 the whole clip, ending (zoom in) or starting (zoom out) at `--zoom-amount`
 (default 1.3). `--pan` drifts the visible window across the image while
 zoomed — it needs `--zoom` (panning uses the extra image area a zoom exposes).
+
+`--zoom-method smooth` (the default) scales an oversampled canvas with
+`eval=frame` and places that frame with a per-frame offset, so a slow move
+does not step on whole output pixels. `--zoom-method zoompan` keeps the older
+`zoompan` filter. It is faster, and it rounds the window to integer pixels,
+which can wobble on a slow zoom or pan. If you use it, check a contact sheet
+or consecutive frames (`references/gotchas.md#ken-burns-zoom`).
 
 ### background.py — generate a solid-colour or gradient clip
 ```

@@ -68,13 +68,9 @@ Fit to the delivery size before burning captions. Captions burned small and then
 
 Loudness targets in the presets are about -14 LUFS for most social video, -16 for podcast, -23 for broadcast, true peak at or under -1 dBTP. The montage default when no platform is named is about -16 LUFS. Do not normalise room tone or near-silence up to a speech target. Detail: `references/gotchas.md#loudness-and-ambience`, `references/gotchas.md#platform-safe-zones`.
 
-## Motion graphics (optional)
+## Still zoom and pan
 
-Skip this unless the piece needs a designed animation. Search [Subframe Motion](https://www.subframe.com/motion) for inspiration first, pull a working example from that library, and render it to video (a headless browser capture or Remotion). Do not copy the library into this repository. The `video-production` skill has the full step.
-
-Composite the render with `scripts/overlay.py`. `--video` lays a clip on (picture-in-picture, or full frame with `--position 0,0 --margin 0`). `--image` lays a still. `--place START-END@AT` drops several pieces of one rendered layer onto the timeline. `--chromakey 0x00ff00` (or whatever the plate colour is) removes a solid background. The layer's own audio is dropped. Keep the graphic inside the platform safe area.
-
-Simple titles do not need any of this. `scripts/overlay.py --text`, `scripts/graphics.py` and `scripts/caption.py` are the usual tools.
+`scripts/insert.py --zoom in|out` (optional `--pan`) is the Ken Burns move on a photo. `--zoom-method smooth` is the default: an oversampled scale with `eval=frame` and a per-frame placement, so a slow move does not step on whole output pixels. `--zoom-method zoompan` keeps the older filter. It is faster, and it rounds the window to integer pixels, which can jitter. If you choose it, check `scripts/look.py` or consecutive frames before you keep the shot. Detail: `references/gotchas.md#ken-burns-zoom`.
 
 ## Encode
 

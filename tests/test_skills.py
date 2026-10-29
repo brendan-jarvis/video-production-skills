@@ -93,15 +93,7 @@ class SkillFileTests(unittest.TestCase):
         self.assertIn("https://github.com/kajisho5/ffmpeg-skill", readme)
         self.assertIn("https://x.com/ashebytes/status/2115215620279263329", readme)
         self.assertIn("Director video bot template", readme)
-        self.assertIn("https://x.com/uptightchill/status/2115497754021786060", readme)
-        self.assertIn("https://www.subframe.com/motion", readme)
         self.assertIn("and many other creators whose posts and guides shaped this workflow.", readme)
-        skill_blob = "\n".join(
-            (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8") for name in SKILLS
-        )
-        self.assertIn("https://www.subframe.com/motion", skill_blob)
-        self.assertIn("Motion graphics (optional)", skill_blob)
-        self.assertFalse((ROOT / "subframe").exists())
         self.assertNotIn("adapted from kajisho5", readme.lower())
         self.assertNotIn("fork", readme.lower())
         license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")

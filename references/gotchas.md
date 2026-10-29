@@ -286,6 +286,16 @@ visibly choppy for sports, gaming, drone pans. Keep 60 when the platform allows.
 trim it drops two thirds of the words. Ask which, or propose a highlight cut with
 `scenes.py`.
 
+### Ken Burns zoom
+`scripts/insert.py --zoom` moves across a still. `--zoom-method smooth` is the
+default: it scales an oversampled copy of the frame with `eval=frame` and
+places it with a per-frame offset, so a slow zoom or pan does not wobble.
+`--zoom-method zoompan` keeps the older filter. It is faster, and it rounds
+the window to integer pixels, so the picture can hold and then jump. Use it
+when speed matters more than a steady move, then check the contact sheet
+(`scripts/look.py`) or consecutive frames around the move. A step of a whole
+output pixel on a slow pan is that rounding, not the still.
+
 ### Platform safe zones
 Every vertical app draws its own UI over the delivery: TikTok covers roughly the
 bottom 22 % (description and caption block), the right 14 % (like/comment/share
