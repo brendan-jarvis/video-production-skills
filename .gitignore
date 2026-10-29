@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+tests/out/
+tests/corpus/
+
+.DS_Store
+.vscode/
+.idea/
