@@ -319,6 +319,31 @@ p5 about 2.3x, with SSIM Y 0.985 against the CPU render. Two traps:
 Check the zoom for jitter on a frozen frame: the per-frame scale change from
 optical flow should be a flat line.
 
+### Shot length
+A Live Photo or a clip in a montage must not run longer than the file. Do not
+hold the last frame to fill the slot (`tpad=stop_mode=clone`, `scripts/freeze.py`,
+`scripts/grid.py --pad`) and do not slow the clip down to cover the gap
+(`scripts/fit.py` with a longer `--duration`, or a `scripts/render.py` clip
+`speed` below 1 that stretches past the file). Trim to the last beat at or
+before the clip ends, and leave about two frames of margin so a rounded out
+point still lands inside the file. `scripts/render.py` refuses the project when
+a clip's out point, or the length it would play at its speed, runs past the
+source by more than those two frames. A still is different: `scripts/insert.py`
+holds a photo for the shot on purpose.
+
+If the cut is then shorter than the music, add shots or fade the music out on
+the last downbeat. Do not freeze a frame to catch the song up.
+
+`scripts/join.py` and `scripts/cut.py --segments` can hold a last frame when a
+clip's own sound runs past its picture, so a join does not open a hole. That
+hold is for the clip's own audio. It is not a way to stretch a short Live Photo
+out to the next bar.
+
+### Large renders
+A long render, especially 4K, is best left on the machine that encoded it, or
+copied over a private network. A path that caps upload or file-copy size is a
+poor way to move it.
+
 ### Platform safe zones
 Every vertical app draws its own UI over the delivery: TikTok covers roughly the
 bottom 22 % (description and caption block), the right 14 % (like/comment/share

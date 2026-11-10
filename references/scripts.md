@@ -894,7 +894,13 @@ in the render result's `snap`. A project without `"snap"` builds the command
 line 1.16 built.
 
 Stages: clips (cut, optional speed) → join (transition) → silence → fit →
-captions → graphics → overlays → audio → loudness → export → chapters → check. Keys mirror the
+captions → graphics → overlays → audio → loudness → export → chapters → check. A clip
+must not play longer than its source. An `out` more than two frames past the file,
+or a `speed` below 1 that would play the shot longer than the file, is refused
+(`kind: input`) before anything is cut, including under `--dry-run`. Trim to the
+last beat at or before the clip ends. Do not hold the last frame or slow the clip
+down to fill the gap. A still (half a second or shorter, no real clip) is not
+this check: `insert.py` holds a photo on purpose. Keys mirror the
 CLI flags of each script (see the docstring); a key `render.py` does not read -- at
 the top level or in any stage/clip object -- is refused (`kind: input`) naming the
 key and the nearest valid one, never silently ignored. Use it whenever an edit has

@@ -68,6 +68,10 @@ Fit to the delivery size before burning captions. Captions burned small and then
 
 Loudness targets in the presets are about -14 LUFS for most social video, -16 for podcast, -23 for broadcast, true peak at or under -1 dBTP. The montage default when no platform is named is about -16 LUFS. Do not normalise room tone or near-silence up to a speech target. Detail: `references/gotchas.md#loudness-and-ambience`, `references/gotchas.md#platform-safe-zones`.
 
+## Clip length
+
+A Live Photo or a clip must not play longer than the file. Do not hold the last frame (`tpad=stop_mode=clone`, `scripts/freeze.py`, `scripts/grid.py --pad`) and do not slow the clip down to fill (`scripts/fit.py` with a longer `--duration`, or a `scripts/render.py` clip `speed` below 1 that stretches past the file). Trim to the last beat at or before the clip ends, with about two frames of margin. `scripts/render.py` refuses a clip whose out point or played length runs past the source. If the montage is then short of the music, add shots or fade the music out early. A still is the other case: `scripts/insert.py` holds a photo for the shot on purpose. Detail: `references/gotchas.md#shot-length`.
+
 ## Still zoom and pan
 
 `scripts/insert.py --zoom in|out` (optional `--pan`) is the Ken Burns move on a photo. `--zoom-method smooth` is the default: an oversampled scale with `eval=frame` and a per-frame placement, so a slow move does not step on whole output pixels. `--zoom-method zoompan` keeps the older filter. It is faster, and it rounds the window to integer pixels, which can jitter. If you choose it, check `scripts/look.py` or consecutive frames before you keep the shot. Detail: `references/gotchas.md#ken-burns-zoom`. To render a long photo montage on an NVIDIA GPU (libplacebo zoom and colour, NVENC), read `references/gotchas.md#gpu-render-path` first.
@@ -76,7 +80,7 @@ Loudness targets in the presets are about -14 LUFS for most social video, -16 fo
 
 Default SDR re-encodes are x264. HDR stays HEVC Main10. `scripts/export.py --preset h265` is CPU HEVC (libx265). `--hw` is Apple VideoToolbox only, and a GPU encode is not CRF-equivalent. The scripts fall back to the CPU when VideoToolbox refuses the job.
 
-On NVIDIA, a final HEVC encode with `hevc_nvenc` at constant quality around 19 is an option when `doctor` lists that encoder. If it is missing or the encode fails, use `--preset h265` or the default H.264. Do not rebuild the whole edit as a hand-written ffmpeg command to reach the GPU.
+When the render machine has an NVIDIA card, prefer the GPU montage path in `references/gotchas.md#gpu-render-path` (libplacebo for colour, fill, scale and zoom, then `hevc_nvenc`) and check it against a CPU render of the same shots. Constant quality around 19 is a reasonable `hevc_nvenc` choice when `doctor` lists that encoder. If the encoder is missing or the encode fails, use `--preset h265` or the default H.264. Use the scripts for every other step. Do not hand-write a second ffmpeg command for a step a script already covers.
 
 ## Shared flags
 

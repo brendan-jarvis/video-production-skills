@@ -687,6 +687,29 @@ class OrchestrationTests(MediaFixtures):
             proc = script("render.py", *argv, expect_fail=True)
             self.assertIn(message, proc.stderr, f"{name}: {proc.stderr[-400:]}")
 
+    def test_render_refuses_a_shot_longer_than_its_source(self):
+        """A Live Photo or clip must not be stretched past the file. An out point more than
+        two frames past the source, or a speed that would play the shot longer than the
+        file, is refused before any encode. A window that stays inside the file, including
+        one played slowly, and an out point one frame past the end, still plan."""
+        src = probe(str(OUT / "source.mp4"))
+        dur, fps = src["duration"], src["video"]["fps"]
+        past = self._proj("render_past.json", {"clips": [{"src": "source.mp4", "in": 0, "out": dur + 1.0}]})
+        proc = script("render.py", past, "--dry-run", "--json", expect_fail=True)
+        doc = json.loads(proc.stdout)
+        self.assertEqual(doc["error"]["kind"], "input")
+        self.assertIn("past", doc["error"]["message"])
+        self.assertIn("last frame", doc["error"]["message"])
+        self.assertEqual(doc["commands"], [], "refused before a cut ran")
+        slow = self._proj("render_slow.json", {"clips": [{"src": "source.mp4", "speed": 0.5}]})
+        proc = script("render.py", slow, "--dry-run", "--json", expect_fail=True)
+        self.assertIn("longer than", json.loads(proc.stdout)["error"]["message"])
+        # one frame past the end is inside the two-frame margin; a slow window still inside the file is slow motion
+        margin = self._proj("render_margin.json", {"clips": [{"src": "source.mp4", "in": 0, "out": dur + 1.0 / fps}]})
+        script("render.py", margin, "--dry-run", "--json")
+        window = self._proj("render_window.json", {"clips": [{"src": "source.mp4", "in": 0, "out": 4, "speed": 0.5}]})
+        script("render.py", window, "--dry-run", "--json")
+
     def test_render_refuses_an_unknown_project_key_naming_the_nearest_valid_one(self):
         """Review 9: a project was read with dict.get only, so a mistyped key was silently
         ignored -- a clip "start"/"end" (the spelling graphics and overlays use for their own
