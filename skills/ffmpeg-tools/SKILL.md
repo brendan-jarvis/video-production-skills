@@ -70,7 +70,7 @@ Loudness targets in the presets are about -14 LUFS for most social video, -16 fo
 
 ## Still zoom and pan
 
-`scripts/insert.py --zoom in|out` (optional `--pan`) is the Ken Burns move on a photo. `--zoom-method smooth` is the default: an oversampled scale with `eval=frame` and a per-frame placement, so a slow move does not step on whole output pixels. `--zoom-method zoompan` keeps the older filter. It is faster, and it rounds the window to integer pixels, which can jitter. If you choose it, check `scripts/look.py` or consecutive frames before you keep the shot. Detail: `references/gotchas.md#ken-burns-zoom`.
+`scripts/insert.py --zoom in|out` (optional `--pan`) is the Ken Burns move on a photo. `--zoom-method smooth` is the default: an oversampled scale with `eval=frame` and a per-frame placement, so a slow move does not step on whole output pixels. `--zoom-method zoompan` keeps the older filter. It is faster, and it rounds the window to integer pixels, which can jitter. If you choose it, check `scripts/look.py` or consecutive frames before you keep the shot. Detail: `references/gotchas.md#ken-burns-zoom`. To render a long photo montage on an NVIDIA GPU (libplacebo zoom and colour, NVENC), read `references/gotchas.md#gpu-render-path` first.
 
 ## Encode
 

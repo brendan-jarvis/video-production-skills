@@ -296,6 +296,29 @@ when speed matters more than a steady move, then check the contact sheet
 (`scripts/look.py`) or consecutive frames around the move. A step of a whole
 output pixel on a slow pan is that rounding, not the still.
 
+### GPU render path
+On a machine with an NVIDIA card the per-shot montage graph can run on the GPU
+with a current ffmpeg (7.1 or later, built with libplacebo and Vulkan; BtbN gpl
+builds are). Decode with `-hwaccel cuda`, keep frame timing (`fps=30`) on the
+CPU, then `hwupload` and do colour, fill-crop, scale and the zoom in one
+`libplacebo` pass: `colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:gamut_mode=clip:dithering=none`
+matches a zscale conversion, and `crop_w`/`crop_h` expressions on `n` give a
+per-frame, sub-pixel zoom with no zoompan stepping. A portrait's blurred
+background is a libplacebo downscale to about 32x18 and a gaussian upscale
+(`gblur_vulkan` is too weak and leaves coloured edge lines), composited with
+`libplacebo=inputs=2`. `hwdownload`, then `hevc_nvenc`. On a 2080 Ti at 4K
+the encoder is the bottleneck: preset p6 was about 1.7x the CPU-filter path,
+p5 about 2.3x, with SSIM Y 0.985 against the CPU render. Two traps:
+- iPhone Live Photo MOVs carry clean-aperture crop metadata. ffmpeg 7.1 and
+  later apply it and older builds do not, so the same graph comes out about
+  1.1x zoomed on one of them. Pass `-apply_cropping none` (or crop on purpose)
+  when comparing builds.
+- Compare renders frame-aligned (`setpts=N/30/TB` on both inputs to `ssim`).
+  Sub-millisecond timestamp drift makes `ssim` pair the wrong frames and
+  report a bad score for a matching picture.
+Check the zoom for jitter on a frozen frame: the per-frame scale change from
+optical flow should be a flat line.
+
 ### Platform safe zones
 Every vertical app draws its own UI over the delivery: TikTok covers roughly the
 bottom 22 % (description and caption block), the right 14 % (like/comment/share
