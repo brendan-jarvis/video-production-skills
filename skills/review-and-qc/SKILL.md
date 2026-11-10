@@ -14,7 +14,7 @@ Paths such as `scripts/check.py` are relative to the repository root.
 ## Gates
 
 1. Render about 30 seconds that includes a still with movement, a clip, and a transition (`videos/<slug>/renders/test/`). Stop there. The user checks look and colour before the full render.
-2. Pull consecutive frames around fast moves and transitions. Judge jitter from motion across those frames, not from a single still. `scripts/insert.py --zoom-method smooth` (the default) should not step on whole pixels. `--zoom-method zoompan` is faster and can: the picture holds, then jumps. If you see that, switch the still to `smooth` or keep `zoompan` only after the contact sheet looks steady.
+2. Pull consecutive frames around fast moves and transitions. Judge jitter from motion across those frames, not from a single still. `scripts/insert.py --zoom-method smooth` (the default) should not step on whole pixels. `--zoom-method zoompan` is faster and can: the picture holds, then jumps. If you see that, switch the still to `smooth` or keep `zoompan` only after the contact sheet looks steady. Check that no clip ends on a held or frozen frame. A Live Photo or clip stretched to the music shows up as a frozen tail. `scripts/check.py --content` reports a long frozen span, and a short hold can still pass that row, so look at the frames at each clip end. A title card is a still on purpose. A clip's last frame held to fill the slot is not. Detail: `references/gotchas.md#shot-length`.
 3. List the three worst defects with timestamps. Fix only those sections. For a hard section, render two or three short variants and pick the best.
 4. Check the sound. Cuts land on beats. Dialogue is clear and the music ducks under it. The ending resolves with the music. Loudness is about -16 LUFS when no platform is named, or the platform target (`scripts/loudness.py`, `scripts/check.py --platform NAME`). True peak is at or under -1 dBTP. Room tone was not boosted to a speech level.
 5. Watch the full cut, then offer section-by-section refinement.
@@ -33,4 +33,6 @@ Mixed cameras need one grade, or no grade. iPhone HDR that was flattened into BT
 
 ## Deliver
 
-The published file is `published/vN.mp4`. Do not overwrite an earlier version. With it: a title, a description that credits the music (title, artist, licence, link), and a 1280x720 thumbnail with bold text that is still readable small, under 2 MB.
+The published file is `published/vN.mp4`. Do not overwrite an earlier version. With it: a title, a description that credits the music (title, artist, licence, link), and a 1280x720 thumbnail with bold text that is still readable small, under 2 MB. For YouTube, the description includes a chapter timestamp for each section.
+
+A large render is best left on the machine that made it, or moved over a private network. A size-limited upload or file-copy path is a poor way to move it. Detail: `references/gotchas.md#large-renders`.

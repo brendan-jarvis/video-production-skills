@@ -48,4 +48,4 @@ python3 scripts/audio.py INPUT --music BED --duck --fade-out 3
 
 Normalise the finished mix with `scripts/loudness.py`. About -16 LUFS is the default for a montage when no platform is named. Platform presets are often -14 LUFS for social video, -16 for a podcast, -23 for broadcast, with true peak at or under -1 dBTP (`scripts/check.py --platform NAME`, `templates/`). Do not lift room tone or near-silence up to a speech target. Detail: `references/gotchas.md#loudness-and-ambience`.
 
-The ending should resolve with the music. Do not cut the song off in the middle of a phrase unless the style is a hard stop and the user asked for it.
+The ending should resolve with the music. Do not cut the song off in the middle of a phrase unless the style is a hard stop and the user asked for it. If the picture runs out before the song, fade the music out on a downbeat or add shots. Do not hold a clip's last frame to reach the end of the track.

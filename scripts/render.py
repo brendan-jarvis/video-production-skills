@@ -57,7 +57,12 @@ Project format (all keys optional except clips):
 
 Stages run in this order: clips (cut) → join → silence → fit → captions →
 graphics → overlays → audio → loudness → export → chapters → check. Missing stages are
-skipped. "brand" points caption/graphics/overlay at a brand.json (fonts,
+skipped. A clip must not play longer than its source. An out point more than two
+frames past the file, or a speed below 1 that would play the shot longer than the
+file, is refused: trim to the last beat at or before the clip ends. Do not hold
+the last frame or slow the clip down to fill a gap.
+
+"brand" points caption/graphics/overlay at a brand.json (fonts,
 colours, logo, safe margin); {"logo": true} in overlays places the brand logo.
 An overlay entry draws one of logo, image, text or video (a picture-in-picture
 layer, overlay.py --video; "chromakey", "chromakey_similarity" and
@@ -95,7 +100,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from export import PRESETS, PLATFORM_OF
 from _platforms import PLATFORMS, caption_defaults, resolve as resolve_platform
-from _common import STATE, add_common, aspect_ratio, brand_caption_style, load_brand, apply_common, child_args, die, emit, info, probe, require_tool, run, run_tool, place_output, refuse_output_is_input, _check_existing_output, _check_output_path, fingerprint, PLAN_VERSION, ffmpeg_version, ffmpeg_exe, X264_PRESETS
+from _common import STATE, MissingFpsError, add_common, aspect_ratio, brand_caption_style, load_brand, apply_common, child_args, die, emit, info, parse_time, probe, require_tool, run, run_tool, place_output, refuse_output_is_input, _check_existing_output, _check_output_path, fingerprint, PLAN_VERSION, ffmpeg_version, ffmpeg_exe, X264_PRESETS
 from _common.runner import HW_ENV, HW_FORCED_ENV, add_hw_orchestrator_args
 from _common.emit import absorb_stage, audit, record_fallback, record_skip, refuse, warn
 import subprocess
@@ -1069,6 +1074,66 @@ def export_timeline(proj: Dict[str, Any], rel, dest: str) -> int:
     return 0
 
 
+# A rounded out point may sit this many frames past the file and still be the clip's end.
+_SHOT_MARGIN_FRAMES = 2
+
+
+def _refuse_shot_past_source(index: int, clip: Dict[str, Any], meta: Dict[str, Any]) -> None:
+    """Refuse a Live Photo or clip whose shot would run longer than the file.
+
+    Stills are held on purpose (insert.py). A file longer than half a second is a
+    clip: its out point, and the length it would play at its speed, must stay
+    inside the source, with two frames of slack for a rounded timestamp. Slowing
+    a short window that still finishes inside the file is left alone -- that is
+    slow motion, not a hold to fill the music.
+    """
+    video = meta.get("video") or {}
+    src_dur = float(meta.get("duration") or 0.0)
+    if not video or meta.get("dry_run") or src_dur <= 0.5:
+        return
+    fps = float(video.get("fps") or 0.0)
+    if fps <= 0:
+        fps = 30.0
+    margin = _SHOT_MARGIN_FRAMES / fps
+
+    def _seconds(value):
+        # A time cut.py cannot read is cut.py's refusal. Naming it here would hide that
+        # "cut.py failed" path, and a bad time is not a shot that overruns its source.
+        try:
+            return parse_time(str(value), fps)
+        except (ValueError, MissingFpsError):
+            return None
+
+    start = 0.0 if clip.get("in") is None else _seconds(clip["in"])
+    end = src_dur if clip.get("out") is None else _seconds(clip["out"])
+    if start is None or end is None or end <= start:
+        return
+    # speed 0 is "unset" (the stage below skips it). A non-positive or non-numeric
+    # speed is named by that same check; do not replace its message.
+    raw_speed = clip.get("speed")
+    speed = 1.0
+    if raw_speed not in (None, "", 0, 0.0):
+        try:
+            speed = float(raw_speed)
+        except (TypeError, ValueError):
+            return
+        if not (speed > 0) or speed != speed or speed == float("inf"):
+            return
+    name = os.path.basename(str(clip.get("src") or "clip"))
+    if end > src_dur + margin:
+        die(f"clip {index}: out {end:.3f}s is past {name} ({src_dur:.3f}s) by more than "
+            f"{_SHOT_MARGIN_FRAMES} frames. Trim the shot to the last beat at or before the clip ends. "
+            f"Do not hold the last frame or slow the clip down to fill.",
+            kind="input",
+            hint="if the montage is then short of the music, add shots or fade the music out early")
+    played = (min(end, src_dur) - start) / speed
+    if played > src_dur + margin:
+        die(f"clip {index}: this shot would run {played:.3f}s, longer than {name} ({src_dur:.3f}s). "
+            f"Do not slow a clip down to fill, and do not hold its last frame.",
+            kind="input",
+            hint="trim to the last beat at or before the clip ends; if the montage is short of the music, add shots or fade the music out early")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("project", nargs="?", help="project.json, or a plan.json written by <tool> --plan")
@@ -1300,6 +1365,10 @@ def main() -> int:
     parts: List[str] = []
     for i, c in enumerate(clips):
         src = rel(c["src"])
+        # An out point past the file used to be clamped by cut.py, and a speed below 1
+        # stretches the shot through fit.py. Either one lets a short clip fill a slot
+        # it does not have. Refuse it here, including under --dry-run, before that runs.
+        _refuse_shot_past_source(i, c, probe(src))
         needs_cut = c.get("in") is not None or c.get("out") is not None
         part = str(work / f"clip{i:02d}{mid}")
         if needs_cut:

@@ -296,6 +296,54 @@ when speed matters more than a steady move, then check the contact sheet
 (`scripts/look.py`) or consecutive frames around the move. A step of a whole
 output pixel on a slow pan is that rounding, not the still.
 
+### GPU render path
+On a machine with an NVIDIA card the per-shot montage graph can run on the GPU
+with a current ffmpeg (7.1 or later, built with libplacebo and Vulkan; BtbN gpl
+builds are). Decode with `-hwaccel cuda`, keep frame timing (`fps=30`) on the
+CPU, then `hwupload` and do colour, fill-crop, scale and the zoom in one
+`libplacebo` pass: `colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:gamut_mode=clip:dithering=none`
+matches a zscale conversion, and `crop_w`/`crop_h` expressions on `n` give a
+per-frame, sub-pixel zoom with no zoompan stepping. A portrait's blurred
+background is a libplacebo downscale to about 32x18 and a gaussian upscale
+(`gblur_vulkan` is too weak and leaves coloured edge lines), composited with
+`libplacebo=inputs=2`. `hwdownload`, then `hevc_nvenc`. On a 2080 Ti at 4K
+the encoder is the bottleneck: preset p6 was about 1.7x the CPU-filter path,
+p5 about 2.3x, with SSIM Y 0.985 against the CPU render. Two traps:
+- iPhone Live Photo MOVs carry clean-aperture crop metadata. ffmpeg 7.1 and
+  later apply it and older builds do not, so the same graph comes out about
+  1.1x zoomed on one of them. Pass `-apply_cropping none` (or crop on purpose)
+  when comparing builds.
+- Compare renders frame-aligned (`setpts=N/30/TB` on both inputs to `ssim`).
+  Sub-millisecond timestamp drift makes `ssim` pair the wrong frames and
+  report a bad score for a matching picture.
+Check the zoom for jitter on a frozen frame: the per-frame scale change from
+optical flow should be a flat line.
+
+### Shot length
+A Live Photo or a clip in a montage must not run longer than the file. Do not
+hold the last frame to fill the slot (`tpad=stop_mode=clone`, `scripts/freeze.py`,
+`scripts/grid.py --pad`) and do not slow the clip down to cover the gap
+(`scripts/fit.py` with a longer `--duration`, or a `scripts/render.py` clip
+`speed` below 1 that stretches past the file). Trim to the last beat at or
+before the clip ends, and leave about two frames of margin so a rounded out
+point still lands inside the file. `scripts/render.py` refuses the project when
+a clip's out point, or the length it would play at its speed, runs past the
+source by more than those two frames. A still is different: `scripts/insert.py`
+holds a photo for the shot on purpose.
+
+If the cut is then shorter than the music, add shots or fade the music out on
+the last downbeat. Do not freeze a frame to catch the song up.
+
+`scripts/join.py` and `scripts/cut.py --segments` can hold a last frame when a
+clip's own sound runs past its picture, so a join does not open a hole. That
+hold is for the clip's own audio. It is not a way to stretch a short Live Photo
+out to the next bar.
+
+### Large renders
+A long render, especially 4K, is best left on the machine that encoded it, or
+copied over a private network. A path that caps upload or file-copy size is a
+poor way to move it.
+
 ### Platform safe zones
 Every vertical app draws its own UI over the delivery: TikTok covers roughly the
 bottom 22 % (description and caption block), the right 14 % (like/comment/share

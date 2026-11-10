@@ -55,9 +55,9 @@ Follow the `ffmpeg-tools` skill. Build `edit.json` (source, in/out, duration, mo
 
 - Use straight cuts unless the style calls for transitions.
 - For a still with a zoom or pan, use `scripts/insert.py --zoom`. The default `--zoom-method smooth` keeps the move off whole-pixel steps. `--zoom-method zoompan` is faster and can jitter; check the contact sheet before keeping it. Do not hand-write a `zoompan` filter. Set fps explicitly on the input and the output (30).
-- Live Photos: avoid frame-blending slow motion, which melts the picture. Play at native speed or slow down by repeating frames. Deshake only shaky clips (`scripts/stabilize.py`).
+- Live Photos and clips: a shot must not run longer than the file. Do not hold the last frame (`tpad=stop_mode=clone`, `scripts/freeze.py`, `scripts/grid.py --pad`) and do not slow the clip down to fill the slot (`scripts/fit.py` with a longer target, or a clip `speed` below 1 that stretches past the file). Trim to the last beat at or before the clip ends, leaving about two frames of margin. `scripts/render.py` refuses a clip whose out point or played length runs past the source. If the montage is then shorter than the music, add shots or fade the music out early. Do not hold a frame to catch up. Avoid frame-blending slow motion (`scripts/fit.py --smooth blend` or `interpolate`), which melts the picture. Deshake only shaky clips (`scripts/stabilize.py`). Detail: `references/gotchas.md#shot-length`.
 - Keep captions and titles inside the platform safe area (`references/gotchas.md#platform-safe-zones`).
-- Encode the final file as HEVC when the destination allows it. If `hevc_nvenc` is available, constant quality around 19 is a reasonable choice. Otherwise use `scripts/export.py --preset h265` (CPU libx265) or the scripts' default H.264. CPU is the fallback whenever the GPU encoder is missing or fails.
+- When the render machine has an NVIDIA card, prefer the GPU pipeline for a long photo montage and check it against a CPU render of the same shots (`references/gotchas.md#gpu-render-path`). Encode the final file as HEVC when the destination allows it. Constant quality around 19 is a reasonable `hevc_nvenc` choice when that encoder is available. If it is missing or the encode fails, use `scripts/export.py --preset h265` (CPU libx265) or the scripts' default H.264.
 
 ## 5. Review gates
 
@@ -65,7 +65,8 @@ Follow the `review-and-qc` skill. Judge rendered frames, not intentions. Pause a
 
 ## 6. Deliver
 
-- Deliver `published/vN.mp4`, a title and description with music credits, and a 1280x720 thumbnail (bold readable text, checked at small size, under 2 MB).
+- Deliver `published/vN.mp4`, a title and description with music credits, and a 1280x720 thumbnail (bold readable text, checked at small size, under 2 MB). For YouTube, the description includes a chapter timestamp for each section. The same times can go on the file with `scripts/metadata.py --chapters`, or as a `chapters` list in the `scripts/render.py` project.
+- A large render is best left on the machine that made it, or moved over a private network. A size-limited upload or file-copy path is a poor way to move it. Detail: `references/gotchas.md#large-renders`.
 - Talk to the user in plain words, without file names, shot numbers or tool names.
 - After a result the user is happy with, write what worked into the project's `style.md`, so the next video improves.
 - Offer to clean up working files, keeping the published cuts and backups.
